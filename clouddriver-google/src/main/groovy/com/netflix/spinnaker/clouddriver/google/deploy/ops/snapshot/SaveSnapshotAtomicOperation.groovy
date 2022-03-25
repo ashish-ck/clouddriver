@@ -454,6 +454,7 @@ class SaveSnapshotAtomicOperation implements AtomicOperation<Void> {
         autoscalerMap.autoscaling_policy.metric.add(metricMap)
       }
     }
+
     if (autoscalingPolicy.scalingSchedules) {
       autoscalerMap.autoscaling_policy.scalingSchedules = []
       autoscalingPolicy.scalingSchedules.each {Map scalingSchedule ->

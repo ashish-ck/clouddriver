@@ -77,7 +77,6 @@ class GoogleServerGroup implements GoogleLabeledResource {
   StatefulPolicy statefulPolicy
 
   List<String> autoscalingMessages
-  // not required ??
   //Map<String, String> scalingSchedulingMessages
 
   @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="class")

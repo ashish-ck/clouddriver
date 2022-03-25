@@ -917,7 +917,6 @@ abstract class AbstractGoogleServerGroupCachingAgent
               .filter(Objects::nonNull)
               .collect(toImmutableList()));
     }
-    // not required ??
     //    if (autoscaler.getScalingScheduleStatus() != null) {
     //      serverGroup.setScalingSchedulingMessages(
     //          autoscaler.getScalingScheduleStatus().entrySet().stream()

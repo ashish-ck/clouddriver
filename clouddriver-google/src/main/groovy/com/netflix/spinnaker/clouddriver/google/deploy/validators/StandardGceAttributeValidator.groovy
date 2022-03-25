@@ -474,14 +474,12 @@ class StandardGceAttributeValidator {
           utilization.with {
             validateNotEmpty(metric, "${path}.metric")
 
-            if (utilizationTarget < 0) {
+            if (utilizationTarget <= 0) {
               errors.rejectValue("${context}.${path}.utilizationTarget",
                 "${context}.${path}.utilizationTarget must be greater than zero.")
             }
 
             validateNotEmpty(utilizationTargetType, "${path}.utilizationTargetType")
-
-            //TODO: validate filter
 
             if (singleInstanceAssignment < 0) {
               errors.rejectValue("${context}.${path}.singleInstanceAssignment",
