@@ -201,9 +201,9 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
     if (description.loadBalancers) {
       // GCEUtil.queryAllLoadBalancers() will throw an exception if a referenced load balancer cannot be resolved.
       def foundLoadBalancers = GCEUtil.queryAllLoadBalancers(googleLoadBalancerProvider,
-                                                             description.loadBalancers,
-                                                             task,
-                                                             BASE_PHASE)
+        description.loadBalancers,
+        task,
+        BASE_PHASE)
 
       // Queue ILBs to update, but wait to update metadata until Https LBs are calculated.
       internalLoadBalancers = foundLoadBalancers.findAll { it.loadBalancerType == GoogleLoadBalancerType.INTERNAL }
@@ -238,22 +238,22 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
     // Furthermore, we're using the underlying raw compute model classes
     // so we can't simply change the representation to support what we need for shielded VMs.
     def attachedDisks = GCEUtil.buildAttachedDisks(description,
-                                                   null,
-                                                   false,
-                                                   googleDeployDefaults,
-                                                   task,
-                                                   BASE_PHASE,
-                                                   clouddriverUserAgentApplicationName,
-                                                   googleConfigurationProperties.baseImageProjects,
-                                                   bootImage,
-                                                   safeRetry,
-                                                   this)
+      null,
+      false,
+      googleDeployDefaults,
+      task,
+      BASE_PHASE,
+      clouddriverUserAgentApplicationName,
+      googleConfigurationProperties.baseImageProjects,
+      bootImage,
+      safeRetry,
+      this)
 
     def networkInterface = GCEUtil.buildNetworkInterface(network,
-                                                         subnet,
-                                                         description.associatePublicIpAddress == null || description.associatePublicIpAddress,
-                                                         ACCESS_CONFIG_NAME,
-                                                         ACCESS_CONFIG_TYPE)
+      subnet,
+      description.associatePublicIpAddress == null || description.associatePublicIpAddress,
+      ACCESS_CONFIG_NAME,
+      ACCESS_CONFIG_TYPE)
 
     def hasBackendServices = (instanceMetadata &&
       instanceMetadata.containsKey(BACKEND_SERVICE_NAMES)) || sslLoadBalancers || tcpLoadBalancers
@@ -292,9 +292,9 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
 
       backendServices.each { String backendServiceName ->
         BackendService backendService = timeExecute(
-            compute.backendServices().get(project, backendServiceName),
-            "compute.backendServices.get",
-            TAG_SCOPE, SCOPE_GLOBAL)
+          compute.backendServices().get(project, backendServiceName),
+          "compute.backendServices.get",
+          TAG_SCOPE, SCOPE_GLOBAL)
 
         Backend backendToAdd
         GCEUtil.updateMetadataWithLoadBalancingPolicy(policy, instanceMetadata, objectMapper)
@@ -335,9 +335,9 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
 
       ilbServices.each { String backendServiceName ->
         BackendService backendService = timeExecute(
-            compute.regionBackendServices().get(project, region, backendServiceName),
-            "compute.regionBackendServices.get",
-            TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
+          compute.regionBackendServices().get(project, region, backendServiceName),
+          "compute.regionBackendServices.get",
+          TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
         Backend backendToAdd
         if (internalHttpLbBackendServices.contains(backendServiceName)) {
           backendToAdd = GCEUtil.backendFromLoadBalancingPolicy(policy)
@@ -417,15 +417,15 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
     }
 
     def instanceProperties = new InstanceProperties(machineType: machineTypeName,
-                                                    disks: attachedDisks,
-                                                    guestAccelerators: description.acceleratorConfigs ?: [],
-                                                    networkInterfaces: [networkInterface],
-                                                    canIpForward: canIpForward,
-                                                    metadata: metadata,
-                                                    tags: tags,
-                                                    labels: labels,
-                                                    scheduling: scheduling,
-                                                    serviceAccounts: serviceAccount)
+      disks: attachedDisks,
+      guestAccelerators: description.acceleratorConfigs ?: [],
+      networkInterfaces: [networkInterface],
+      canIpForward: canIpForward,
+      metadata: metadata,
+      tags: tags,
+      labels: labels,
+      scheduling: scheduling,
+      serviceAccounts: serviceAccount)
 
     if (GCEUtil.isShieldedVmCompatible(bootImage)) {
       def shieldedVmConfig = GCEUtil.buildShieldedVmConfig(description)
@@ -437,17 +437,17 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
     }
 
     def instanceTemplate = new InstanceTemplate(name: instanceTemplateName,
-                                                properties: instanceProperties)
+      properties: instanceProperties)
 
     def instanceTemplateCreateOperation = timeExecute(
-        compute.instanceTemplates().insert(project, instanceTemplate),
-        "compute.instanceTemplates.insert",
-        TAG_SCOPE, SCOPE_GLOBAL)
+      compute.instanceTemplates().insert(project, instanceTemplate),
+      "compute.instanceTemplates.insert",
+      TAG_SCOPE, SCOPE_GLOBAL)
     def instanceTemplateUrl = instanceTemplateCreateOperation.targetLink
 
     // Before building the managed instance group we must check and wait until the instance template is built.
     googleOperationPoller.waitForGlobalOperation(compute, project, instanceTemplateCreateOperation.getName(),
-        null, task, "instance template " + GCEUtil.getLocalName(instanceTemplateUrl), BASE_PHASE)
+      null, task, "instance template " + GCEUtil.getLocalName(instanceTemplateUrl), BASE_PHASE)
 
     if (description.capacity) {
       description.targetSize = description.capacity.desired
@@ -464,13 +464,13 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
 
     if (description.source?.useSourceCapacity && description.source?.region && description.source?.serverGroupName) {
       task.updateStatus BASE_PHASE, "Looking up server group $description.source.serverGroupName in $description.source.region " +
-                                    "in order to copy the current capacity..."
+        "in order to copy the current capacity..."
 
       // Locate the ancestor server group.
       def ancestorServerGroup = GCEUtil.queryServerGroup(googleClusterProvider,
-                                                         description.accountName,
-                                                         description.source.region,
-                                                         description.source.serverGroupName)
+        description.accountName,
+        description.source.region,
+        description.source.serverGroupName)
 
       description.targetSize = ancestorServerGroup.capacity.desired
       description.autoscalingPolicy = ancestorServerGroup.autoscalingPolicy
@@ -483,26 +483,26 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
 
     List<InstanceGroupManagerAutoHealingPolicy> autoHealingPolicy =
       autoHealingHealthCheck
-      ? [new InstanceGroupManagerAutoHealingPolicy(
-             healthCheck: autoHealingHealthCheck.selfLink,
-             initialDelaySec: description.autoHealingPolicy.initialDelaySec)]
-      : null
+        ? [new InstanceGroupManagerAutoHealingPolicy(
+        healthCheck: autoHealingHealthCheck.selfLink,
+        initialDelaySec: description.autoHealingPolicy.initialDelaySec)]
+        : null
 
     if (autoHealingPolicy && description.autoHealingPolicy.maxUnavailable) {
       def maxUnavailable = new FixedOrPercent(fixed: description.autoHealingPolicy.maxUnavailable.fixed as Integer,
-                                              percent: description.autoHealingPolicy.maxUnavailable.percent as Integer)
+        percent: description.autoHealingPolicy.maxUnavailable.percent as Integer)
 
       autoHealingPolicy[0].setMaxUnavailable(maxUnavailable)
     }
 
     def migCreateOperation
     def instanceGroupManager = new InstanceGroupManager()
-        .setName(serverGroupName)
-        .setBaseInstanceName(serverGroupName)
-        .setInstanceTemplate(instanceTemplateUrl)
-        .setTargetSize(description.targetSize)
-        .setTargetPools(targetPools)
-        .setAutoHealingPolicies(autoHealingPolicy)
+      .setName(serverGroupName)
+      .setBaseInstanceName(serverGroupName)
+      .setInstanceTemplate(instanceTemplateUrl)
+      .setTargetSize(description.targetSize)
+      .setTargetPools(targetPools)
+      .setAutoHealingPolicies(autoHealingPolicy)
 
     if ((hasBackendServices || internalHttpLoadBalancers) && (description?.loadBalancingPolicy || description?.source?.serverGroupName))  {
       List<NamedPort> namedPorts = []
@@ -557,9 +557,9 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
       }
 
       migCreateOperation = timeExecute(
-          compute.regionInstanceGroupManagers().insert(project, region, instanceGroupManager),
-          "compute.regionInstanceGroupManagers.insert",
-          TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
+        compute.regionInstanceGroupManagers().insert(project, region, instanceGroupManager),
+        "compute.regionInstanceGroupManagers.insert",
+        TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
 
       if (willUpdateBackendServices || willCreateAutoscaler || willUpdateRegionalBackendServices) {
         // Before updating the Backend Services or creating the Autoscaler we must wait until the managed instance group is created.
@@ -570,20 +570,20 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
           task.updateStatus BASE_PHASE, "Creating regional autoscaler for $serverGroupName..."
 
           Autoscaler autoscaler = GCEUtil.buildAutoscaler(serverGroupName,
-                                                          migCreateOperation.targetLink,
-                                                          description.autoscalingPolicy)
+            migCreateOperation.targetLink,
+            description.autoscalingPolicy)
 
           timeExecute(
-              compute.regionAutoscalers().insert(project, region, autoscaler),
-              "compute.regionAutoscalers.insert",
-              TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
+            compute.regionAutoscalers().insert(project, region, autoscaler),
+            "compute.regionAutoscalers.insert",
+            TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
         }
       }
     } else {
       migCreateOperation = timeExecute(
-          compute.instanceGroupManagers().insert(project, zone, instanceGroupManager),
-          "compute.instanceGroupManagers.insert",
-          TAG_SCOPE, SCOPE_ZONAL, TAG_ZONE, zone)
+        compute.instanceGroupManagers().insert(project, zone, instanceGroupManager),
+        "compute.instanceGroupManagers.insert",
+        TAG_SCOPE, SCOPE_ZONAL, TAG_ZONE, zone)
 
       if (willUpdateBackendServices || willCreateAutoscaler || willUpdateRegionalBackendServices) {
         // Before updating the Backend Services or creating the Autoscaler we must wait until the managed instance group is created.
@@ -594,12 +594,12 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
           task.updateStatus BASE_PHASE, "Creating zonal autoscaler for $serverGroupName..."
 
           Autoscaler autoscaler = GCEUtil.buildAutoscaler(serverGroupName,
-                                                          migCreateOperation.targetLink,
-                                                          description.autoscalingPolicy)
+            migCreateOperation.targetLink,
+            description.autoscalingPolicy)
 
           timeExecute(compute.autoscalers().insert(project, zone, autoscaler),
-                      "compute.autoscalers.insert",
-                      TAG_SCOPE, SCOPE_ZONAL, TAG_ZONE, zone)
+            "compute.autoscalers.insert",
+            TAG_SCOPE, SCOPE_ZONAL, TAG_ZONE, zone)
         }
       }
     }
@@ -645,25 +645,25 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
 
   private boolean autoscalerIsSpecified(BasicGoogleDeployDescription description) {
     return description.autoscalingPolicy?.with {
-      cpuUtilization || loadBalancingUtilization || customMetricUtilizations
+      cpuUtilization || loadBalancingUtilization || customMetricUtilizations || scalingSchedules
     }
   }
 
   private Closure updateRegionBackendServices(Compute compute, String project, String region, String backendServiceName, BackendService backendService) {
     return {
       BackendService serviceToUpdate = timeExecute(
-         compute.regionBackendServices().get(project, region, backendServiceName),
-         "compute.regionBackendServices.get",
-         TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
+        compute.regionBackendServices().get(project, region, backendServiceName),
+        "compute.regionBackendServices.get",
+        TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
       if (serviceToUpdate.backends == null) {
         serviceToUpdate.backends = new ArrayList<Backend>()
       }
       backendService?.backends?.each { serviceToUpdate.backends << it }
       serviceToUpdate.getBackends().unique { backend -> backend.group }
       timeExecute(
-          compute.regionBackendServices().update(project, region, backendServiceName, serviceToUpdate),
-          "compute.regionBackendServices.update",
-          TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
+        compute.regionBackendServices().update(project, region, backendServiceName, serviceToUpdate),
+        "compute.regionBackendServices.update",
+        TAG_SCOPE, SCOPE_REGIONAL, TAG_REGION, region)
       null
     }
   }
@@ -671,18 +671,18 @@ class BasicGoogleDeployHandler implements DeployHandler<BasicGoogleDeployDescrip
   private Closure updateBackendServices(Compute compute, String project, String backendServiceName, BackendService backendService) {
     return {
       BackendService serviceToUpdate = timeExecute(
-          compute.backendServices().get(project, backendServiceName),
-          "compute.backendServices.get",
-          TAG_SCOPE, SCOPE_GLOBAL)
+        compute.backendServices().get(project, backendServiceName),
+        "compute.backendServices.get",
+        TAG_SCOPE, SCOPE_GLOBAL)
       if (serviceToUpdate.backends == null) {
         serviceToUpdate.backends = new ArrayList<Backend>()
       }
       backendService?.backends?.each { serviceToUpdate.backends << it }
       serviceToUpdate.getBackends().unique { backend -> backend.group }
       timeExecute(
-          compute.backendServices().update(project, backendServiceName, serviceToUpdate),
-          "compute.backendServices.update",
-          TAG_SCOPE, SCOPE_GLOBAL)
+        compute.backendServices().update(project, backendServiceName, serviceToUpdate),
+        "compute.backendServices.update",
+        TAG_SCOPE, SCOPE_GLOBAL)
       null
     }
   }
